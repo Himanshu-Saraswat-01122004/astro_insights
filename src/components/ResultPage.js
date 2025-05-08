@@ -1,8 +1,8 @@
+import { useState, useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
-import axios from "axios";
+import { motion } from "framer-motion";
 import { FiCalendar, FiClock, FiMapPin, FiUser, FiDownload, FiHome, FiInfo } from 'react-icons/fi';
-import { motion } from 'framer-motion';
+import axios from "axios";
 
 const ResultPage = () => {
   const location = useLocation();
@@ -12,7 +12,8 @@ const ResultPage = () => {
   const [svgResult, setSvgResult] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [downloadUrl, setDownloadUrl] = useState(null);
+  const [downloadingChart, setDownloadingChart] = useState(false);
+  const chartRef = useRef(null);
 
   const generateDatetime = (dob, tob) => {
     const [year, month, day] = dob.split("-");
@@ -20,17 +21,73 @@ const ResultPage = () => {
     return `${year}-${month}-${day}T${hours}:${minutes}:00+05:30`;
   }
 
-  const handleDownload = () => {
-    if (svgResult) {
-      const blob = new Blob([svgResult], { type: 'image/svg+xml' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `astrology-chart-${formData.name.toLowerCase().replace(/\s+/g, '-')}.svg`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+  // Function to download chart as PNG
+  const handleDownloadChart = async () => {
+    if (!chartRef.current || !svgResult) return;
+    
+    try {
+      setDownloadingChart(true);
+      
+      // Get the SVG element
+      const svgElement = chartRef.current.querySelector('svg');
+      if (!svgElement) {
+        console.error('No SVG element found');
+        setDownloadingChart(false);
+        return;
+      }
+      
+      // Clone the SVG to manipulate it
+      const clonedSvg = svgElement.cloneNode(true);
+      
+      // Set dimensions for the output image
+      const svgWidth = svgElement.width.baseVal.value || 800;
+      const svgHeight = svgElement.height.baseVal.value || 800;
+      
+      // Create a canvas element
+      const canvas = document.createElement('canvas');
+      canvas.width = svgWidth;
+      canvas.height = svgHeight;
+      const ctx = canvas.getContext('2d');
+      
+      // Fill background (optional)
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Convert SVG to a data URL
+      const svgData = new XMLSerializer().serializeToString(clonedSvg);
+      const svgBlob = new Blob([svgData], {type: 'image/svg+xml;charset=utf-8'});
+      const url = URL.createObjectURL(svgBlob);
+      
+      // Create image from SVG
+      const img = new Image();
+      img.onload = () => {
+        // Draw the image on the canvas
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        
+        // Convert canvas to data URL and trigger download
+        const pngUrl = canvas.toDataURL('image/png');
+        const downloadLink = document.createElement('a');
+        downloadLink.href = pngUrl;
+        downloadLink.download = `astrology-chart-${formData.chartType || 'lagna'}.png`;
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+        
+        // Clean up
+        URL.revokeObjectURL(url);
+        setDownloadingChart(false);
+      };
+      
+      img.onerror = (error) => {
+        console.error('Error loading SVG image', error);
+        setDownloadingChart(false);
+      };
+      
+      img.src = url;
+      
+    } catch (error) {
+      console.error('Error downloading chart:', error);
+      setDownloadingChart(false);
     }
   };
 
@@ -43,19 +100,34 @@ const ResultPage = () => {
     const fetchSvgResult = async () => {
       setLoading(true);
       try {
+        // First, store user data in the database via separate API call
+        const userData = {
+          name: formData.name || '',
+          dob: formData.dob || '',
+          tob: formData.tob || '',
+          pob: formData.pob || ''
+        };
+
+        // Send user data to be stored in database
+        await axios.post(
+          process.env.REACT_APP_API_URL+"/store-user-data",
+          userData
+        );
+
+        // Original GET request for chart data remains unchanged
         const response = await axios.get(process.env.REACT_APP_API_URL+"/astrology-chart", 
-        // const response = await axios.get("http://localhost:4000/astrology-chart", 
           {
-          params: {
-            ayanamsa: 1,
-            coordinates: formData.coordinates,
-            datetime: generateDatetime(formData.dob, formData.tob),
-            chart_type: formData.chartType || 'lagna',
-            chart_style: formData.chartStyle || 'north-indian',
-            format: "svg",
-            la: formData.language || 'en',
-          },
-        });
+            params: {
+              ayanamsa: 1,
+              coordinates: formData.coordinates,
+              datetime: generateDatetime(formData.dob, formData.tob),
+              chart_type: formData.chartType || 'lagna',
+              chart_style: formData.chartStyle || 'north-indian',
+              format: "svg",
+              la: formData.language || 'en',
+            },
+          }
+        );
 
         setSvgResult(response.data);
       } catch (err) {
@@ -223,11 +295,32 @@ const ResultPage = () => {
                   <motion.div 
                     whileHover={{ scale: 1.02 }}
                     transition={{ type: "spring", stiffness: 300 }}
-                    className="relative bg-white/40 rounded-xl p-6 shadow-inner"
+                    className="relative bg-gradient-to-br from-white/80 via-white/90 to-orange-50/80 rounded-xl p-6 shadow-inner backdrop-blur-sm overflow-hidden"
                   >
+                    {/* Lord Ganesh background - using inline SVG */}
+                    <div className="absolute inset-0 z-0 opacity-10 pointer-events-none flex items-center justify-center">
+                      <svg 
+                        width="60%" 
+                        height="60%" 
+                        viewBox="0 0 100 100" 
+                        className="fill-orange-100/60"
+                        style={{
+                          filter: 'drop-shadow(0 0 5px rgba(249, 115, 22, 0.2))',
+                        }}
+                      >
+                        <path d="M50,10 C40,10 32,15 28,25 C25,18 20,17 15,20 C10,23 9,30 12,35 C15,40 20,42 25,38 C23,45 25,52 30,55 C25,57 22,62 25,67 C28,72 35,73 40,70 C42,75 47,80 50,80 C53,80 58,75 60,70 C65,73 72,72 75,67 C78,62 75,57 70,55 C75,52 77,45 75,38 C80,42 85,40 88,35 C91,30 90,23 85,20 C80,17 75,18 72,25 C68,15 60,10 50,10 Z M42,30 C45,30 47,33 47,36 C47,39 45,42 42,42 C39,42 37,39 37,36 C37,33 39,30 42,30 Z M58,30 C61,30 63,33 63,36 C63,39 61,42 58,42 C55,42 53,39 53,36 C53,33 55,30 58,30 Z M35,50 C35,45 42,45 42,50 L42,65 C42,70 35,70 35,65 L35,50 Z M65,50 C65,45 58,45 58,50 L58,65 C58,70 65,70 65,65 L65,50 Z" />
+                      </svg>
+                    </div>
+                    
+                    {/* Decorative elements */}
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-orange-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 -translate-y-1/3 translate-x-1/3"></div>
+                    <div className="absolute bottom-0 left-0 w-32 h-32 bg-yellow-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 translate-y-1/3 -translate-x-1/3"></div>
+                    
+                    {/* SVG content */}
                     <div 
+                      ref={chartRef}
                       dangerouslySetInnerHTML={{ __html: svgResult }}
-                      className="transform scale-125 origin-center"
+                      className="transform scale-125 origin-center relative z-10"
                       style={{
                         minHeight: '500px',
                         display: 'flex',
@@ -235,6 +328,24 @@ const ResultPage = () => {
                         alignItems: 'center'
                       }}
                     />
+                    
+                    {/* Download button */}
+                    <motion.button
+                      whileHover={{ scale: 1.05, backgroundColor: 'rgba(249, 115, 22, 0.9)' }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={handleDownloadChart}
+                      className="absolute top-3 right-3 z-20 bg-orange-500/80 hover:bg-orange-500 text-white px-3 py-2 rounded-lg shadow-md flex items-center space-x-2 transition-all duration-300"
+                      disabled={downloadingChart}
+                    >
+                      <FiDownload className="h-4 w-4" />
+                      <span className="text-sm font-medium">{downloadingChart ? 'Processing...' : 'Download'}</span>
+                    </motion.button>
+                    
+                    {/* Beautiful frame */}
+                    <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-transparent via-orange-300/50 to-transparent"></div>
+                    <div className="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-transparent via-orange-300/50 to-transparent"></div>
+                    <div className="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-transparent via-orange-300/50 to-transparent"></div>
+                    <div className="absolute inset-y-0 right-0 w-1 bg-gradient-to-b from-transparent via-orange-300/50 to-transparent"></div>
                     <div className="absolute inset-0 rounded-xl ring-1 ring-orange-100 pointer-events-none"></div>
                   </motion.div>
                 </motion.div>
@@ -247,7 +358,7 @@ const ResultPage = () => {
                   <motion.button
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
-                    onClick={handleDownload}
+                    onClick={handleDownloadChart}
                     className="w-full sm:w-auto inline-flex items-center justify-center px-8 py-4 bg-gradient-to-r from-orange-600 to-orange-500 text-white rounded-xl hover:from-orange-700 hover:to-orange-600 transition duration-300 shadow-md hover:shadow-xl transform hover:-translate-y-0.5 font-medium"
                   >
                     <FiDownload className="mr-3 h-5 w-5" />

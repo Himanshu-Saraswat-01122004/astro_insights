@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { updateForm, resetForm } from "../redux/formSlice";
 import axios from "axios";
-import { FiCalendar, FiClock, FiMapPin, FiUser } from 'react-icons/fi';
+import { FiCalendar, FiClock, FiMapPin, FiUser, FiChevronDown, FiGlobe, FiLayout, FiStar, FiCompass } from 'react-icons/fi';
+import { RiMoonClearLine, RiSunLine, RiCompassLine } from 'react-icons/ri';
 
 const Form = () => {
   const dispatch = useDispatch();
@@ -63,23 +64,23 @@ const Form = () => {
   };
 
   const chartTypes = [
-    { value: 'lagna', label: 'Lagna Chart' },
-    { value: 'navamsa', label: 'Navamsa Chart' },
-    { value: 'rasi', label: 'Rasi Chart' }
+    { value: 'lagna', label: 'Lagna Chart', icon: <RiSunLine className="text-yellow-500" /> },
+    { value: 'navamsa', label: 'Navamsa Chart', icon: <RiMoonClearLine className="text-blue-500" /> },
+    { value: 'rasi', label: 'Rasi Chart', icon: <RiCompassLine className="text-purple-500" /> }
   ];
 
   const chartStyles = [
-    { value: 'north-indian', label: 'North Indian' },
-    { value: 'south-indian', label: 'South Indian' },
-    { value: 'east-indian', label: 'East Indian' }
+    { value: 'north-indian', label: 'North Indian', icon: <FiCompass className="text-orange-500" /> },
+    { value: 'south-indian', label: 'South Indian', icon: <FiCompass className="text-green-500" /> },
+    { value: 'east-indian', label: 'East Indian', icon: <FiCompass className="text-blue-500" /> }
   ];
 
   const languages = [
-    { value: 'en', label: 'English' },
-    { value: 'hi', label: 'Hindi' },
-    { value: 'ta', label: 'Tamil' },
-    { value: 'te', label: 'Telugu' },
-    { value: 'ml', label: 'Malayalam' }
+    { value: 'en', label: 'English', icon: <FiGlobe className="text-blue-500" /> },
+    { value: 'hi', label: 'Hindi', icon: <FiGlobe className="text-orange-500" /> },
+    { value: 'ta', label: 'Tamil', icon: <FiGlobe className="text-green-500" /> },
+    { value: 'te', label: 'Telugu', icon: <FiGlobe className="text-purple-500" /> },
+    { value: 'ml', label: 'Malayalam', icon: <FiGlobe className="text-yellow-500" /> }
   ];
 
   const handleSubmit = (e) => {
@@ -138,132 +139,198 @@ const Form = () => {
         )}
 
         <div className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6 bg-orange-50/50 p-6 rounded-xl border border-orange-100/50 shadow-inner">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6 bg-gradient-to-br from-orange-50/70 to-yellow-50/70 p-6 rounded-xl border border-orange-100/50 shadow-inner backdrop-blur-sm transform transition-all duration-500 hover:shadow-lg hover:shadow-orange-200/20 hover:from-orange-50/90 hover:to-yellow-50/90">
             <h3 className="md:col-span-3 text-lg font-semibold text-orange-800 mb-2">Chart Preferences</h3>
             <div>
-              <label htmlFor="chartType" className="block mb-2 text-sm font-medium text-gray-900">
+              <label htmlFor="chartType" className="block mb-2 text-sm font-medium text-gray-900 flex items-center gap-2">
+                <FiStar className="text-orange-500" />
                 Chart Type
               </label>
-              <select
-                id="chartType"
-                name="chartType"
-                className="block w-full py-3 px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition duration-300 bg-white/80 backdrop-blur-sm hover:bg-white"
-                value={formData.chartType || 'lagna'}
-                onChange={handleChange}
-              >
-                {chartTypes.map(type => (
-                  <option key={type.value} value={type.value}>{type.label}</option>
-                ))}
-              </select>
+              <div className="relative">
+                <select
+                  id="chartType"
+                  name="chartType"
+                  className="block w-full py-3 pl-10 pr-12 appearance-none border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition duration-300 bg-white/80 backdrop-blur-sm hover:bg-white shadow-sm cursor-pointer"
+                  value={formData.chartType || 'lagna'}
+                  onChange={handleChange}
+                >
+                  {chartTypes.map(type => (
+                    <option key={type.value} value={type.value}>{type.label}</option>
+                  ))}
+                </select>
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-orange-500">
+                  {chartTypes.find(type => type.value === (formData.chartType || 'lagna'))?.icon || <RiSunLine className="text-orange-500" />}
+                </div>
+                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                  <FiChevronDown className="h-5 w-5 text-gray-400" />
+                </div>
+                <div className="absolute top-0 left-0 w-full h-full rounded-lg pointer-events-none transition-all duration-300 ring-1 ring-orange-400/30 group-hover:ring-orange-400/60"></div>
+              </div>
             </div>
 
             <div>
-              <label htmlFor="chartStyle" className="block mb-2 text-sm font-medium text-gray-900">
+              <label htmlFor="chartStyle" className="block mb-2 text-sm font-medium text-gray-900 flex items-center gap-2">
+                <FiLayout className="text-orange-500" />
                 Chart Style
               </label>
-              <select
-                id="chartStyle"
-                name="chartStyle"
-                className="block w-full py-3 px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition duration-300 bg-white/80 backdrop-blur-sm hover:bg-white"
-                value={formData.chartStyle || 'north-indian'}
-                onChange={handleChange}
-              >
-                {chartStyles.map(style => (
-                  <option key={style.value} value={style.value}>{style.label}</option>
-                ))}
-              </select>
+              <div className="relative">
+                <select
+                  id="chartStyle"
+                  name="chartStyle"
+                  className="block w-full py-3 pl-10 pr-12 appearance-none border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition duration-300 bg-white/80 backdrop-blur-sm hover:bg-white shadow-sm cursor-pointer"
+                  value={formData.chartStyle || 'north-indian'}
+                  onChange={handleChange}
+                >
+                  {chartStyles.map(style => (
+                    <option key={style.value} value={style.value}>{style.label}</option>
+                  ))}
+                </select>
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-orange-500">
+                  {chartStyles.find(style => style.value === (formData.chartStyle || 'north-indian'))?.icon || <FiCompass className="text-orange-500" />}
+                </div>
+                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                  <FiChevronDown className="h-5 w-5 text-gray-400" />
+                </div>
+                <div className="absolute top-0 left-0 w-full h-full rounded-lg pointer-events-none transition-all duration-300 ring-1 ring-orange-400/30 group-hover:ring-orange-400/60"></div>
+              </div>
             </div>
 
             <div>
-              <label htmlFor="language" className="block mb-2 text-sm font-medium text-gray-900">
+              <label htmlFor="language" className="block mb-2 text-sm font-medium text-gray-900 flex items-center gap-2">
+                <FiGlobe className="text-orange-500" />
                 Language
               </label>
-              <select
-                id="language"
-                name="language"
-                className="block w-full py-3 px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition duration-300 bg-white/80 backdrop-blur-sm hover:bg-white"
-                value={formData.language || 'en'}
-                onChange={handleChange}
-              >
-                {languages.map(lang => (
-                  <option key={lang.value} value={lang.value}>{lang.label}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <FiUser className="h-5 w-5 text-gray-400" />
-            </div>
-            <input
-              type="text"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition duration-150"
-              placeholder="Enter your name"
-              required
-            />
-          </div>
-
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <FiCalendar className="h-5 w-5 text-gray-400" />
-            </div>
-            <input
-              type="date"
-              name="dob"
-              value={formData.dob}
-              onChange={handleChange}
-              className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition duration-150"
-              required
-            />
-          </div>
-
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <FiClock className="h-5 w-5 text-gray-400" />
-            </div>
-            <input
-              type="time"
-              name="tob"
-              value={formData.tob}
-              onChange={handleChange}
-              className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition duration-150"
-              required
-            />
-          </div>
-
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <FiMapPin className="h-5 w-5 text-gray-400" />
-            </div>
-            <input
-              type="text"
-              name="pob"
-              value={selectedPlace}
-              onChange={handleChange}
-              className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition duration-150"
-              placeholder="Enter your birthplace"
-              required
-            />
-            {loading && (
-              <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-orange-600"></div>
+              <div className="relative group">
+                <select
+                  id="language"
+                  name="language"
+                  className="block w-full py-3 pl-10 pr-12 appearance-none border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition duration-300 bg-white/80 backdrop-blur-sm hover:bg-white shadow-sm cursor-pointer"
+                  value={formData.language || 'en'}
+                  onChange={handleChange}
+                >
+                  {languages.map(lang => (
+                    <option key={lang.value} value={lang.value}>{lang.label}</option>
+                  ))}
+                </select>
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-orange-500">
+                  {languages.find(lang => lang.value === (formData.language || 'en'))?.icon || <FiGlobe className="text-blue-500" />}
+                </div>
+                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                  <FiChevronDown className="h-5 w-5 text-gray-400" />
+                </div>
+                <div className="absolute top-0 left-0 w-full h-full rounded-lg pointer-events-none transition-all duration-300 ring-1 ring-orange-400/30 group-hover:ring-orange-400/60"></div>
               </div>
-            )}
+            </div>
+          </div>
+
+          <div className="relative group">
+            <label htmlFor="name" className="block mb-2 text-sm font-medium text-gray-900 flex items-center gap-2">
+              <FiUser className="text-orange-500" />
+              Your Name
+            </label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <FiUser className="h-5 w-5 text-orange-400" />
+              </div>
+              <input
+                id="name"
+                type="text"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                className="block w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-300 bg-white/90 hover:bg-white hover:shadow-sm backdrop-blur-sm"
+                placeholder="Enter your full name"
+                required
+              />
+              <div className="absolute top-0 left-0 w-full h-full rounded-lg pointer-events-none transition-all duration-300 ring-1 ring-orange-400/30 group-hover:ring-orange-400/60"></div>
+            </div>
+          </div>
+
+          <div className="relative group">
+            <label htmlFor="dob" className="block mb-2 text-sm font-medium text-gray-900 flex items-center gap-2">
+              <FiCalendar className="text-orange-500" />
+              Date of Birth
+            </label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <FiCalendar className="h-5 w-5 text-orange-400" />
+              </div>
+              <input
+                id="dob"
+                type="date"
+                name="dob"
+                value={formData.dob}
+                onChange={handleChange}
+                className="block w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-300 bg-white/90 hover:bg-white hover:shadow-sm appearance-none cursor-pointer backdrop-blur-sm"
+                required
+              />
+              <div className="absolute top-0 left-0 w-full h-full rounded-lg pointer-events-none transition-all duration-300 ring-1 ring-orange-400/30 group-hover:ring-orange-400/60"></div>
+            </div>
+            <div className="mt-1 text-xs text-gray-500">Your exact birth date for accurate readings</div>
+          </div>
+
+          <div className="relative group">
+            <label htmlFor="tob" className="block mb-2 text-sm font-medium text-gray-900 flex items-center gap-2">
+              <FiClock className="text-orange-500" />
+              Time of Birth
+            </label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <FiClock className="h-5 w-5 text-orange-400" />
+              </div>
+              <input
+                id="tob"
+                type="time"
+                name="tob"
+                value={formData.tob}
+                onChange={handleChange}
+                className="block w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-300 bg-white/90 hover:bg-white hover:shadow-sm appearance-none cursor-pointer backdrop-blur-sm"
+                required
+              />
+              <div className="absolute top-0 left-0 w-full h-full rounded-lg pointer-events-none transition-all duration-300 ring-1 ring-orange-400/30 group-hover:ring-orange-400/60"></div>
+            </div>
+            <div className="mt-1 text-xs text-gray-500">Exact birth time improves chart accuracy</div>
+          </div>
+
+          <div className="relative group">
+            <label htmlFor="pob" className="block mb-2 text-sm font-medium text-gray-900 flex items-center gap-2">
+              <FiMapPin className="text-orange-500" />
+              Place of Birth
+            </label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <FiMapPin className="h-5 w-5 text-orange-400" />
+              </div>
+              <input
+                id="pob"
+                type="text"
+                name="pob"
+                value={selectedPlace}
+                onChange={handleChange}
+                className="block w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-300 bg-white/90 hover:bg-white hover:shadow-sm backdrop-blur-sm"
+                placeholder="Enter city, state, country"
+                required
+              />
+              <div className="absolute top-0 left-0 w-full h-full rounded-lg pointer-events-none transition-all duration-300 ring-1 ring-orange-400/30 group-hover:ring-orange-400/60"></div>
+              {loading && (
+                <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-orange-600"></div>
+                </div>
+              )}
+            </div>
+            <div className="mt-1 text-xs text-gray-500">Location determines planetary positions</div>
+            
             {suggestions.length > 0 && (
-              <ul className="absolute z-10 w-full bg-white mt-1 border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+              <ul className="absolute z-10 w-full bg-white/95 backdrop-blur-sm mt-1 border border-orange-200 rounded-lg shadow-xl max-h-56 overflow-y-auto divide-y divide-orange-100">
                 {suggestions.map((place) => (
                   <li
                     key={place.place_id}
-                    className="px-4 py-3 hover:bg-orange-50 cursor-pointer transition duration-150 border-b border-gray-100 last:border-0"
+                    className="px-4 py-3 hover:bg-orange-50 cursor-pointer transition-all duration-200 hover:pl-6"
                     onClick={() => handleSuggestionClick(place)}
                   >
-                    <div className="flex items-center">
-                      <FiMapPin className="h-4 w-4 text-gray-400 mr-2" />
-                      <span>{place.display_name}</span>
+                    <div className="flex items-center space-x-2">
+                      <FiMapPin className="h-4 w-4 text-orange-500 flex-shrink-0" />
+                      <span className="truncate">{place.display_name}</span>
                     </div>
                   </li>
                 ))}
@@ -274,15 +341,16 @@ const Form = () => {
 
         <button
           type="submit"
-          className="group relative w-full bg-gradient-to-r from-orange-600 to-orange-500 text-white py-4 px-6 rounded-xl hover:from-orange-500 hover:to-orange-600 focus:ring-4 focus:ring-orange-200 transition-all duration-300 mt-8 flex items-center justify-center overflow-hidden shadow-xl hover:shadow-orange-500/20"
+          className="group relative w-full bg-gradient-to-r from-orange-600 to-orange-500 text-white py-4 px-6 rounded-xl hover:from-orange-500 hover:to-orange-600 focus:ring-4 focus:ring-orange-200 transition-all duration-300 mt-10 flex items-center justify-center overflow-hidden shadow-xl hover:shadow-orange-500/30 hover:scale-[1.02] active:scale-[0.98]"
         >
-          <span className="relative flex items-center">
-            <svg className="w-6 h-6 mr-2 transform transition-transform group-hover:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <span className="relative flex items-center text-lg font-medium">
+            <svg className="w-6 h-6 mr-3 transform transition-transform group-hover:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
             </svg>
             Generate Your Cosmic Chart
             <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-orange-600/20 to-transparent transform -skew-x-12 transition-transform group-hover:translate-x-full"></div>
           </span>
+          <div className="absolute -top-1 -right-1 w-4 h-4 bg-yellow-300 rounded-full animate-pulse opacity-75"></div>
         </button>
       </form>
       </div>
