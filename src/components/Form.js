@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { updateForm, resetForm } from "../redux/formSlice";
 import axios from "axios";
 import { FiCalendar, FiClock, FiMapPin, FiUser, FiChevronDown, FiGlobe, FiLayout, FiStar, FiCompass } from 'react-icons/fi';
-import { RiMoonClearLine, RiSunLine, RiCompassLine } from 'react-icons/ri';
+import { RiMoonClearLine, RiSunLine, RiCompassLine, RiHistoryLine } from 'react-icons/ri';
 
 const Form = () => {
   const dispatch = useDispatch();
@@ -15,6 +15,41 @@ const Form = () => {
   const [selectedPlace, setSelectedPlace] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [previousEntries, setPreviousEntries] = useState([]);
+  const [showHistory, setShowHistory] = useState(false);
+  
+  // References for handling click outside
+  const nameInputRef = useRef(null);
+  const historyPanelRef = useRef(null);
+  
+  // Load previous entries from localStorage on component mount
+  useEffect(() => {
+    try {
+      const storedEntries = localStorage.getItem('astrologyPreviousEntries');
+      if (storedEntries) {
+        setPreviousEntries(JSON.parse(storedEntries));
+      }
+    } catch (error) {
+      console.error("Error loading previous entries:", error);
+    }
+  }, []);
+  
+  // Handle click outside to close history panel
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showHistory && 
+          historyPanelRef.current && 
+          !historyPanelRef.current.contains(event.target) &&
+          !nameInputRef.current.contains(event.target)) {
+        setShowHistory(false);
+      }
+    };
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showHistory]);
 
   const handleChange = async (e) => {
     const { name, value } = e.target;
@@ -25,6 +60,27 @@ const Form = () => {
     } else {
       dispatch(updateForm({ field: name, value }));
     }
+  };
+  
+  // Toggle history panel when clicking on name field
+  const toggleHistoryPanel = () => {
+    setShowHistory(prev => !prev);
+  };
+  
+  // Handle selecting an entry from history
+  const handleHistoryItemClick = (entry) => {
+    // Update Redux store with the selected entry's data
+    Object.entries(entry).forEach(([field, value]) => {
+      if (field !== 'timestamp') { // Skip timestamp field
+        dispatch(updateForm({ field, value }));
+      }
+    });
+    
+    // Update local state
+    setSelectedPlace(entry.pob || "");
+    
+    // Close history panel
+    setShowHistory(false);
   };
 
   const fetchPlaceSuggestions = async (query) => {
@@ -86,18 +142,38 @@ const Form = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     try {
+      // Create data object with current form data
+      const currentData = {
+        name: formData.name,
+        dob: formData.dob,
+        tob: formData.tob,
+        pob: formData.pob,
+        coordinates: formData.coordinates,
+        chartType: formData.chartType || 'lagna',
+        chartStyle: formData.chartStyle || 'north-indian',
+        language: formData.language || 'en',
+        timestamp: new Date().toISOString() // Add timestamp for sorting
+      };
+      
+      // Store in localStorage (max 5 entries)
+      // Remove any existing entries with the same name to avoid duplicates
+      let updatedEntries = [
+        currentData,
+        ...previousEntries.filter(entry => entry.name !== currentData.name)
+      ];
+      
+      // Limit to 5 entries max
+      if (updatedEntries.length > 5) {
+        updatedEntries = updatedEntries.slice(0, 5);
+      }
+      
+      // Save to localStorage
+      localStorage.setItem('astrologyPreviousEntries', JSON.stringify(updatedEntries));
+      setPreviousEntries(updatedEntries);
+      
       console.log("Details submitted successfully", formData);
       navigate("/result", {
-        state: {
-          name: formData.name,
-          dob: formData.dob,
-          tob: formData.tob,
-          pob: formData.pob,
-          coordinates: formData.coordinates,
-          chartType: formData.chartType || 'lagna',
-          chartStyle: formData.chartStyle || 'north-indian',
-          language: formData.language || 'en',
-        },
+        state: currentData,
       });
       dispatch(resetForm());
     } catch (error) {
@@ -236,13 +312,63 @@ const Form = () => {
                 id="name"
                 type="text"
                 name="name"
-                value={formData.name}
+                ref={nameInputRef}
+                value={formData.name || ""}
                 onChange={handleChange}
-                className="block w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-300 bg-white/90 hover:bg-white hover:shadow-sm backdrop-blur-sm"
+                onClick={toggleHistoryPanel}
+                className="block w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-300 bg-white/90 hover:bg-white hover:shadow-sm backdrop-blur-sm"
                 placeholder="Enter your full name"
                 required
               />
+              {previousEntries.length > 0 && (
+                <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+                  <button 
+                    type="button" 
+                    className="text-orange-500 hover:text-orange-600 transition-colors focus:outline-none"
+                    onClick={toggleHistoryPanel}
+                    title="View recent entries"
+                  >
+                    <RiHistoryLine className="h-5 w-5" />
+                  </button>
+                </div>
+              )}
               <div className="absolute top-0 left-0 w-full h-full rounded-lg pointer-events-none transition-all duration-300 ring-1 ring-orange-400/30 group-hover:ring-orange-400/60"></div>
+              
+              {/* History Panel */}
+              {showHistory && previousEntries.length > 0 && (
+                <div 
+                  ref={historyPanelRef}
+                  className="absolute z-20 w-full mt-1 max-h-60 overflow-y-auto bg-white/95 backdrop-blur-sm rounded-lg shadow-xl border border-orange-200 divide-y divide-orange-100"
+                >
+                  <div className="sticky top-0 z-10 px-4 py-2 bg-orange-50 border-b border-orange-100 flex items-center justify-between">
+                    <span className="text-sm font-medium text-gray-700 flex items-center gap-1">
+                      <RiHistoryLine className="text-orange-500" /> Recent Entries ({previousEntries.length}/5)
+                    </span>
+                  </div>
+                  {previousEntries.map((entry, index) => (
+                    <div 
+                      key={index} 
+                      className="px-4 py-3 hover:bg-orange-50 cursor-pointer transition-colors"
+                      onClick={() => handleHistoryItemClick(entry)}
+                    >
+                      <div className="flex flex-col">
+                        <span className="font-medium text-gray-800">{entry.name}</span>
+                        <div className="flex items-center gap-2 text-xs text-gray-500 mt-1">
+                          <span className="flex items-center gap-1">
+                            <FiCalendar className="text-orange-400" /> {entry.dob}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <FiClock className="text-orange-400" /> {entry.tob}
+                          </span>
+                        </div>
+                        <span className="text-xs text-gray-500 truncate mt-1 flex items-center gap-1">
+                          <FiMapPin className="text-orange-400" /> {entry.pob}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
