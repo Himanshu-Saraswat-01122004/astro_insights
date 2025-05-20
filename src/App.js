@@ -4,6 +4,7 @@ import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import Form from "./components/Form";
 import ResultPage from "./components/ResultPage";
+import Horoscope from "./components/Horoscope";
 
 const App = () => {
   const pageTransition = {
@@ -51,8 +52,7 @@ const App = () => {
                     className="min-h-[calc(100vh-16rem)]"
                   >
                     <div className="text-center py-12">
-                      <h1 className="text-3xl font-bold text-orange-800 mb-4">Daily Horoscope</h1>
-                      <p className="text-orange-600">Coming Soon</p>
+                      <Horoscope />
                     </div>
                   </motion.div>
                 } />
